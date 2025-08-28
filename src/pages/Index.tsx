@@ -16,6 +16,8 @@ const mockEvents = [
     location: "Digital Arena, Metaverse City",
     price: 50,
     availableTickets: 120,
+    soldTickets: 365,
+    burntTickets: 15,
     totalTickets: 500,
     category: "Music Festival",
   },
@@ -26,6 +28,8 @@ const mockEvents = [
     location: "Convention Center, Tech District",
     price: 75,
     availableTickets: 0,
+    soldTickets: 185,
+    burntTickets: 15,
     totalTickets: 200,
     category: "Conference",
   },
@@ -36,6 +40,8 @@ const mockEvents = [
     location: "Holographic Hall, Neo Tokyo",
     price: 35,
     availableTickets: 89,
+    soldTickets: 205,
+    burntTickets: 6,
     totalTickets: 300,
     category: "Concert",
   },
@@ -46,6 +52,7 @@ const Index = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [transactionStatus, setTransactionStatus] = useState<TxStatus | null>(null);
   const [purchasedTickets, setPurchasedTickets] = useState<any[]>([]);
+  const [events, setEvents] = useState(mockEvents);
 
   const handleWalletConnection = (connected: boolean, address?: string) => {
     setIsWalletConnected(connected);
@@ -55,8 +62,8 @@ const Index = () => {
   const handleBuyTicket = (eventId: string) => {
     if (!isWalletConnected) return;
     
-    const event = mockEvents.find(e => e.id === eventId);
-    if (!event) return;
+    const event = events.find(e => e.id === eventId);
+    if (!event || event.availableTickets === 0) return;
 
     setTransactionStatus("pending");
     
@@ -64,8 +71,15 @@ const Index = () => {
     setTimeout(() => {
       const random = Math.random();
       if (random > 0.8) {
-        // 20% chance of fraud detection
+        // 20% chance of fraud detection - ticket gets burnt
         setTransactionStatus("fraud");
+        setEvents(prevEvents => 
+          prevEvents.map(e => 
+            e.id === eventId 
+              ? { ...e, availableTickets: e.availableTickets - 1, burntTickets: e.burntTickets + 1 }
+              : e
+          )
+        );
       } else {
         // 80% chance of success
         const ticketId = `TKT${Date.now()}`;
@@ -80,6 +94,15 @@ const Index = () => {
         };
         setPurchasedTickets(prev => [...prev, newTicket]);
         setTransactionStatus("success");
+        
+        // Update event statistics
+        setEvents(prevEvents => 
+          prevEvents.map(e => 
+            e.id === eventId 
+              ? { ...e, availableTickets: e.availableTickets - 1, soldTickets: e.soldTickets + 1 }
+              : e
+          )
+        );
       }
     }, 3000);
   };
@@ -151,12 +174,30 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Wallet Connection */}
-      <section className="py-12 px-6 bg-gradient-to-r from-primary/5 to-accent/5">
-        <div className="max-w-2xl mx-auto">
-          <WalletConnect onConnectionChange={handleWalletConnection} />
-        </div>
-      </section>
+      {/* Wallet Connection - Only show if not connected */}
+      {!isWalletConnected && (
+        <section className="py-12 px-6 bg-gradient-to-r from-primary/5 to-accent/5">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-2">Connect Your Wallet</h2>
+              <p className="text-muted-foreground">Connect your Leather wallet once to start buying NFT tickets</p>
+            </div>
+            <WalletConnect onConnectionChange={handleWalletConnection} />
+          </div>
+        </section>
+      )}
+
+      {/* Wallet Status - Show if connected */}
+      {isWalletConnected && (
+        <section className="py-8 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-center gap-3 text-success">
+              <div className="w-3 h-3 bg-success rounded-full animate-pulse"></div>
+              <span className="font-medium">Wallet Connected: {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Transaction Status */}
       {transactionStatus && (
@@ -180,7 +221,7 @@ const Index = () => {
             Upcoming Events
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mockEvents.map((event) => (
+            {events.map((event) => (
               <EventCard
                 key={event.id}
                 {...event}

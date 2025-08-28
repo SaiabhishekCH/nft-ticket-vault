@@ -12,6 +12,8 @@ interface EventCardProps {
   currency?: string;
   availableTickets: number;
   totalTickets: number;
+  soldTickets: number;
+  burntTickets: number;
   image?: string;
   category: string;
   onBuyTicket: (eventId: string) => void;
@@ -27,6 +29,8 @@ export const EventCard = ({
   currency = "STX",
   availableTickets,
   totalTickets,
+  soldTickets,
+  burntTickets,
   image,
   category,
   onBuyTicket,
@@ -84,12 +88,25 @@ export const EventCard = ({
             <MapPin className="w-4 h-4" />
             <span className="text-sm">{location}</span>
           </div>
-          
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span className="text-sm">
-              {availableTickets} / {totalTickets} tickets available
-            </span>
+        </div>
+
+        {/* Ticket Statistics */}
+        <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-muted/20 rounded-lg">
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Available</div>
+            <div className="text-lg font-semibold text-success">{availableTickets}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Sold</div>
+            <div className="text-lg font-semibold text-accent">{soldTickets}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Total</div>
+            <div className="text-lg font-semibold text-foreground">{totalTickets}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground">Burnt</div>
+            <div className="text-lg font-semibold text-fraud">{burntTickets}</div>
           </div>
         </div>
 
@@ -99,13 +116,14 @@ export const EventCard = ({
           </div>
           
           <Button
-            variant={walletConnected ? "nft" : "wallet"}
-            disabled={!isAvailable || (!walletConnected && isAvailable)}
+            variant={soldOut ? "outline" : (walletConnected ? "nft" : "wallet")}
+            disabled={soldOut || !walletConnected}
             onClick={() => onBuyTicket(id)}
             className="min-w-[120px]"
           >
-            {!walletConnected ? "Connect Wallet" : 
-             soldOut ? "Sold Out" : "Buy NFT Ticket"}
+            {soldOut ? "Sold Out" : 
+             !walletConnected ? "Connect Wallet First" : 
+             "Buy NFT Ticket"}
           </Button>
         </div>
       </div>
